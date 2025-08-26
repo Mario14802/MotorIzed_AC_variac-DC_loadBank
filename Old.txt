@@ -1,0 +1,141 @@
+/*
+ * TypesAndRegMap.h
+ *
+ *  Created on: Jul 23, 2024
+ *      Author: Ramy Sorial
+ */
+
+#ifndef INC_TYPESANDREGMAP_H_
+#define INC_TYPESANDREGMAP_H_
+
+#include "stdint.h"
+#include "NVM_Variables.h"
+
+#define hregs_reg_VarNumber  28 //28
+#define HREGS_SIZE (63-hregs_reg_VarNumber)
+
+typedef struct
+{
+
+    //Setpoint for the AC_Variac
+    uint16_t AC_Current_SP;//0
+    uint16_t AC_Volatge_SP;//1
+
+    // load_bank write_data
+    uint16_t Slave_addresse ;   //2             // to change the slave address 1
+    uint16_t Operating_mode;    //3                 // Measurement quantity mode 2
+    uint16_t test_Enable_Disable;//4                // Measurement quantity switch 3
+    uint16_t CV_set_value;     //5      // Voltage value 4
+    uint16_t CI_set_value;       //6        // Electricity flow value 5
+    uint16_t CP_set_value;          //7     // Constant power value 6
+    uint16_t CR_set_value;      //8 // Electricity value 7
+    uint16_t options;           //9             // Operate options 8
+    uint16_t baud;              //10                // Pass news baud rate 9
+    uint16_t corr_mv;           //11                // Correction measured voltage value 10
+    uint16_t corr_tv;           //12                // Correction test voltage value 11
+    uint16_t corr_tf;           //13                // Correction test electricity flow value 12
+    uint16_t corr_lf;           //14                // Correction lose out electricity flow value 13
+
+    //load_bank Read data
+    uint16_t Read_Slave_addresse ;                  // to change the slave address 1
+    uint16_t Read_Operating_mode;                       // Measurement quantity mode 2
+    uint16_t Read_test_Enable_Disable;              // Measurement quantity switch 3
+    uint16_t Read_CV_set_value;                         // Voltage value 4
+    uint16_t Read_CI_set_value;             // Electricity flow value 5
+    uint16_t Read_CP_set_value;                 // Constant power value 6
+    uint16_t Read_CR_set_value;             // Electricity value 7
+    uint16_t Read_options;                          // Operate options 8
+    uint16_t Read_baud;                             // Pass news baud rate 9
+    uint16_t Read_corr_mv;                          // Correction measured voltage value 10
+    uint16_t Read_corr_tv;                          // Correction test voltage value 11
+    uint16_t Read_corr_tf;                          // Correction test electricity flow value 12
+    uint16_t Read_corr_lf;
+
+
+    uint16_t Free[HREGS_SIZE];
+    uint16_t Checksum;
+} MachineParams;
+
+/**
+ * the machine parameters and states are mapped directly into the
+ * holding register map accessible through the Modbus
+ * double-word variables should always start with an even address number
+ */
+typedef struct
+{
+    /*************** Machine Params - non volatile ********************/
+    /// occupying a total of 64-words (128 bytes)
+    MachineParams Params;
+
+    ///RW states starting from address 64
+    uint16_t Temp; //64
+} HoldingRegMap;
+
+
+
+#define InputregVar  (18)
+#define IREGS_SIZE (63-InputregVar)
+
+typedef struct
+{
+        //multimeter
+        uint16_t Dummy;//0
+        uint16_t AC_Current;//1
+        uint16_t AC_Power;//2
+        uint16_t AC_Freq;//3
+        //Loadbank
+        uint16_t slave_address;//4
+        uint16_t Operating_mode; //5                  // Measurement quantity mode
+        uint16_t test_Enable_Disable;//6              // Measurement quantity switch
+        uint16_t temp_q1;            //7              // Temperature spend measurement quantity
+        uint16_t temp_q2;               //8       // Temperature spend measurement quantity
+        uint16_t in_volt;                   //9   // Measurement quantity voltage
+        uint16_t DC_Voltage;            //10          // Quilt measuring voltage
+        uint16_t DC_Current;            //11          // Quilt measuring electricity flow
+        uint16_t DC_Power;              //12          // Quilt measurement power
+        uint16_t q_block;               //13          // Quilt measurement block value
+        uint16_t q_cap;                 //14          // Quilt measurement capacity
+        uint16_t q_wh;                  //15          // Quilt measurement watthour
+        uint16_t ok_time;       //16
+        uint16_t AC_Voltage;//17         // Transport OK time
+
+
+
+    uint16_t Extras[IREGS_SIZE];
+} InputRegMap;
+
+
+
+enum InputBitMap
+{
+    Multimeter_COMM_OK = 0,
+    LOAD_BANK_COMM_OK = 0,
+};
+
+enum CoilBitMap
+{
+    Enable_System,
+    Disable_System,
+};
+
+extern HoldingRegMap *Hregs;
+extern InputRegMap *Iregs;
+
+#define SetRegBit(Reg, bit) Reg |= (bit)
+#define ResetRegBit(Reg,bit) Reg &= ~(bit)
+
+#define GetRegBit(Reg,bit) ((Reg & bit)?1:0)
+
+#define _MB_GetCoil(coil)         MB_Parse_Bit(MB.CoilBits, coil)
+#define _MB_SetCoil(coil, state)   MB_Encode_Bit(MB.CoilBits, coil, state)
+#define _MB_SetInput(input, state) MB_Encode_Bit(MB.InputBits, input, state)
+#define _MB_GetInput(input)        MB_Parse_Bit(MB.InputBits, input)
+#define _PC_GetCoil(coil)          MB_Parse_Bit(MB.CoilBits, coil)
+#define _PC_SetCoil(coil, state)   MB_Encode_Bit(MB.CoilBits, coil, state)
+#define _PC_SetInput(input, state) MB_Encode_Bit(MB.InputBits, input, state)
+
+//used to initialize the Holding registers
+#define HoldingRegsSize (sizeof(HoldingRegMap) / 2)
+#define InputRegsSize (sizeof(InputRegMap)/2)
+
+#endif /* INC_TYPESANDREGMAP_H_ */
